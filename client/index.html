@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script> 
+<html lang="en-US">
+    <head> 
+        <style>
+            header {
+                        background-color: snow;
+                        padding: 18px;
+                        text-align: center;
+                        font-size: 14px;
+                        color: black;
+                        border: 2px solid black;
+            }
+            body {
+                background-color: ivory;
+            }
+            p {
+                text-align: center;
+                color: black;
+            }
+        </style>
+        <title>fishbowl</title>
+    </head>
+    <body>
+        <header>
+            <b><large>fishbowl</large></b>
+            <em><small>version a0.1</small></em><br>
+            <small>game status: </small>
+            <b><small id="game_status" style="padding: 3px; color: blue">prep</small></b>
+        </header>
+        <br>
+        <span style="padding-left:4em" id="paper_slip"></span>
+    
+        <form name="pname_form" action="javascript:update_name(pname.value)">
+            <label for="pname">input your name:</label><br>
+            <input type="text" id="pname" name="pname"><br><br>
+            <input type="submit" value="submit">
+        </form> 
+
+        <script>
+            var socket = io();
+        
+            // Client to Server
+            var update_name = function(pname) {
+                console.log('pname: ' + pname);
+                console.log('type of: ' + typeof pname);
+                socket.emit('pname update', {
+                    player_name: pname
+                });
+            }
+        
+            // Server to Client
+            socket.on('name?', function(data) { 
+                console.log(data.message);
+            });
+        </script>
+    </body>
+</html>
