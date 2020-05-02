@@ -1,5 +1,6 @@
 .wrapper{
-    display:grid
+    display:grid;
+    grid-template-columns: 30% 70%;
 }
 .wrapper > div{
     background: #eeeeee;
@@ -8,6 +9,7 @@
 .wrapper > div:nth-child(odd){
     background: #dddddd;
 }
+/*
 header {
     background-color: snow;
     padding: 18px;
@@ -18,4 +20,4 @@ header {
 }
 body {
     background-color: ivory;
-}
+}*/

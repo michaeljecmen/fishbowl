@@ -16,16 +16,18 @@ var NUM_SOCKETS = 0;
 var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket) {
     NUM_SOCKETS++;
-    socket.id = Math.random(); // player id
-    console.log('socket connection, player_' + socket.id);
+    socket.id = Math.floor(Math.random() * 100000); // 6 digit player id
     socket.name = 'player_' + socket.id; // temp name
+    console.log('socket connection, ' + socket.name);
+    socket.emit('your name', {
+        name: socket.name
+    }); // send player their name for display purposes
+    SOCKET_LIST[socket.id] = socket; // push into list
 
     // LOBBY SET UP
     // if(NUM_SOCKETS == 1) { 
         
     // }
-
-    SOCKET_LIST[socket.id] = socket; // push into list
 
     // Client to Server
     socket.on('pname update', function(data) {
@@ -37,17 +39,14 @@ io.sockets.on('connection', function(socket) {
         delete SOCKET_LIST[socket.id];
         NUM_SOCKETS--;
     });
-
-    // Server to Client
-    socket.emit('question', 'name?', function (answer) {
-        console.log('new name: ' + answer);
-    });
 });
 
-// // this function gets called continuously
-// setInterval(function(data) {
-//     var pack = []; // pack of all player data
-//     for(var i in SOCKET_LIST) {
-//         socket = SOCKET_LIST[i];
-//     }
-// }, 1000/25); // 25 frames per second
+// this function gets called continuously
+// have it update players names in the lobby
+setInterval(function(data) {
+    var pack = []; // pack of all player data
+    for(var i in SOCKET_LIST) {
+        socket = SOCKET_LIST[i];
+        
+    }
+}, 1000/25); // 25 frames per second
