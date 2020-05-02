@@ -1,0 +1,21 @@
+.wrapper{
+    display:grid
+}
+.wrapper > div{
+    background: #eeeeee;
+    padding: 1em;
+}
+.wrapper > div:nth-child(odd){
+    background: #dddddd;
+}
+header {
+    background-color: snow;
+    padding: 18px;
+    text-align: center;
+    font-size: 14px;
+    color: black;
+    border: 2px solid black;
+}
+body {
+    background-color: ivory;
+}

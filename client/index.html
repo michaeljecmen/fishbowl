@@ -2,56 +2,58 @@
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script> 
 <html lang="en-US">
     <head> 
-        <style>
-            header {
-                        background-color: snow;
-                        padding: 18px;
-                        text-align: center;
-                        font-size: 14px;
-                        color: black;
-                        border: 2px solid black;
-            }
-            body {
-                background-color: ivory;
-            }
-            p {
-                text-align: center;
-                color: black;
-            }
-        </style>
+        <link rel="stylesheet" href="/client/styles.css" type='text/css'>
         <title>fishbowl</title>
     </head>
     <body>
-        <header>
-            <b><large>fishbowl</large></b>
-            <em><small>version a0.1</small></em><br>
-            <small>game status: </small>
-            <b><small id="game_status" style="padding: 3px; color: blue">prep</small></b>
-        </header>
-        <br>
-        <span style="padding-left:4em" id="paper_slip"></span>
-    
-        <form name="pname_form" action="javascript:update_name(pname.value)">
-            <label for="pname">input your name:</label><br>
-            <input type="text" id="pname" name="pname"><br><br>
-            <input type="submit" value="submit">
-        </form> 
+        <div class="wrapper">
+            <div>
+                <header>
+                    <b><large>fishbowl</large></b>
+                    <em><small>version a0.1</small></em><br>
+                    <small>game status: </small>
+                    <b><small id="game_status" style="padding: 3px; color: blue">prep</small></b>
+                </header>
+            </div>
+
+            <div>
+                <p id="disp_name" style="font-size: 24px; font-weight: 800;"></p>
+                <form name="pname_form" id='pname_form' action="javascript:update_name(pname.value)">
+                <label for="pname">update display name:</label><br>
+                <input type="text" id="pname" name="pname"><br><br>
+                <input type="submit" value="submit">
+                </form> 
+            </div>
+        </div>
 
         <script>
             var socket = io();
+            var ALLOW_MULTIPLE_NAME_UPDATES = true;
         
             // Client to Server
+            var update_name_silent = function(pname) {
+                var pform = document.getElementById('pname_form');
+                if(ALLOW_MULTIPLE_NAME_UPDATES) {
+                    pform.pname.value = "";
+                } else {
+                    pform.style.display = 'none';
+                }
+                var dname = document.getElementById('disp_name');
+                dname.innerHTML = pname;
+            }
             var update_name = function(pname) {
-                console.log('pname: ' + pname);
-                console.log('type of: ' + typeof pname);
+                update_name_silent(pname);
                 socket.emit('pname update', {
                     player_name: pname
-                });
+                }); // need to parametrize input still, vulnerable to XSS
             }
         
             // Server to Client
-            socket.on('name?', function(data) { 
-                console.log(data.message);
+            socket.on('your name', function(data) {
+                var tmp = ALLOW_MULTIPLE_NAME_UPDATES;
+                ALLOW_MULTIPLE_NAME_UPDATES = true;
+                update_name_silent(data.name);
+                ALLOW_MULTIPLE_NAME_UPDATES = tmp;
             });
         </script>
     </body>
