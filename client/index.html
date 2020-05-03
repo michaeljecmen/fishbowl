@@ -1,59 +1,88 @@
 <!DOCTYPE html>
-<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script> 
 <html lang="en-US">
     <head> 
+        <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script> 
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js"></script>
         <link rel="stylesheet" href="/client/styles.css" type='text/css'>
         <title>fishbowl</title>
     </head>
     <body>
+        <div class="header">
+            <b><large>fishbowl</large></b>
+            <em><small>version a0.2</small></em><br>
+            <small>game status: </small>
+            <b><small id="game_status">prep</small></b>
+        </div>
+        <br>
         <div class="wrapper">
-            <div>
-                <header>
-                    <b><large>fishbowl</large></b>
-                    <em><small>version a0.1</small></em><br>
-                    <small>game status: </small>
-                    <b><small id="game_status" style="padding: 3px; color: blue">prep</small></b>
-                </header>
-            </div>
-
-            <div>
-                <p id="disp_name" style="font-size: 24px; font-weight: 800;"></p>
+            <div class="box name">
+                <p id="disp_name"></p>
                 <form name="pname_form" id='pname_form' action="javascript:update_name(pname.value)">
                 <label for="pname">update display name:</label><br>
                 <input type="text" id="pname" name="pname"><br><br>
                 <input type="submit" value="submit">
                 </form> 
             </div>
+
+            <div class="box lobby">
+                <p id="lobby_name">lobby:</p>
+                <div id="lobby" class="container"></div>
+                <template id="item_template">
+                    <div id="did_{{ id }}" class="item">
+                      <p id="pid_{{ id }}">{{ name }}</p>
+                    </div>
+                </template>
+            </div>
+
+            <div class="box score">
+                <p id="score">score:</p>
+            </div>
+
+            <div class="box game">
+                the actual game goes here. random text blah blah blah
+            </div>
         </div>
 
         <script>
             var socket = io();
-            var ALLOW_MULTIPLE_NAME_UPDATES = true;
         
-            // Client to Server
-            var update_name_silent = function(pname) {
+            function update_name_silent(pname) {
                 var pform = document.getElementById('pname_form');
-                if(ALLOW_MULTIPLE_NAME_UPDATES) {
-                    pform.pname.value = "";
-                } else {
-                    pform.style.display = 'none';
-                }
+                pform.pname.value = "";
                 var dname = document.getElementById('disp_name');
                 dname.innerHTML = pname;
             }
-            var update_name = function(pname) {
+            function update_name(pname) {
                 update_name_silent(pname);
                 socket.emit('pname update', {
                     player_name: pname
                 }); // need to parametrize input still, vulnerable to XSS
             }
+            function add_player_to_lobby(name, id) {
+                // does not do any duplicate or error checking,
+                // that is the server's job
+                const template = $('#item_template').html()
+                const container = $('#lobby');
+                container.append(Mustache.render(template, { name, id }));
+            }
         
             // Server to Client
             socket.on('your name', function(data) {
-                var tmp = ALLOW_MULTIPLE_NAME_UPDATES;
-                ALLOW_MULTIPLE_NAME_UPDATES = true;
                 update_name_silent(data.name);
-                ALLOW_MULTIPLE_NAME_UPDATES = tmp;
+            });
+            socket.on('lobby player added', function(data){
+                add_player_to_lobby(data.name, data.id);
+            });
+            socket.on('lobby name update', function(data) {
+                // get item in container and change it?
+                var id = "pid_" + data.id;
+                var item = document.getElementById(id);
+                item.innerHTML = data.name;
+            });
+            socket.on('lobby player removed', function(data) {
+                var jqid = "#did_" + data.id;
+                $(jqid).remove();
             });
         </script>
     </body>
