@@ -5,13 +5,14 @@ var serv = require('http').Server(app);
 app.get('/', function(req, res) {
     res.sendFile(__dirname + '/client/index.html');
 });
-app.use('/client', express.static(__dirname + '/client'));
+app.use('/fishbowl', express.static('client')); // serve client folder when /fishbowl is accessed
 
 serv.listen(2000); // change this port whenever, currently we are hosting on localhost:2000
 console.log('server started');
 
 var SOCKET_LIST = {}; // player list
 var NUM_SOCKETS = 0;
+var CODE_LEN = 4;
 
 var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket) {
@@ -53,6 +54,18 @@ io.sockets.on('connection', function(socket) {
     });
 });
 
+// makes random char strings for lobby codes
+function make_lobby_code(length) {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+       result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+ }
+
+ 
 // // this function gets called continuously
 // // have it update players names in the lobby
 // setInterval(function(data) {
