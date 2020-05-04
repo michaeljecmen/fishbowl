@@ -2,10 +2,14 @@ var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
 
-app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/client/index.html');
-});
-app.use('/fishbowl', express.static('client')); // serve client folder when /fishbowl is accessed
+// app.get('/', function(req, res) {
+//     res.sendFile(__dirname + '/client/index.html');
+// });
+app.use('/', express.static('client'));
+app.use('/fishbowl', express.static('client/fishbowl'));
+
+// replace the '/fishbowl/room' below with '/fishbowl/RMCODE', host many virt urls on same folder
+app.use('/fishbowl/room', express.static('client/fishbowl/room'));
 
 serv.listen(2000); // change this port whenever, currently we are hosting on localhost:2000
 console.log('server started');

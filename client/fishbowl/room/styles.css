@@ -1,0 +1,69 @@
+.header {
+    background-color: #fff666;
+    padding:1em;
+    text-align: center;
+    font-size: 14px;
+}
+.wrapper {
+    display:grid;
+    grid-template-columns: 1fr 4fr;
+    grid-gap: 1em;
+}
+.wrapper > div {
+    background: gainsboro;
+}
+
+.container {
+    width: 100%;
+    display: grid;
+    font-size: 12px;
+    line-height: 16px;
+    background: gainsboro;
+    grid-gap: 4px;
+    grid-template-columns:repeat(2, 1fr);
+    grid-auto-flow: dense;
+}
+
+.container .item {
+    background: rgb(235, 235, 235);
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.name {    
+    grid-column:1;
+    grid-row:1/3;
+    padding:1em;
+}
+.lobby {
+    grid-column:1;
+    grid-row:3;
+    padding:1em;
+}
+.score {
+    grid-column:2;
+    grid-row:1;
+    padding: .5em;
+}
+.game {
+    grid-row:2/4;
+    grid-column:2;
+    padding:1em;
+}
+
+#game_status {
+    padding: 3px; 
+    color: blue;
+}
+#disp_name {
+    font-size: 24px; 
+    font-weight: 800;
+}
+#lobby_name {
+    font-size: 24px;
+    font-weight: 800;
+}
+#score {
+    font-size: 18px;
+    font-weight: 800;
+}
