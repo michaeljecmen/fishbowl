@@ -8,13 +8,11 @@ var serv = require('http').Server(app);
 app.use('/', express.static('client'));
 app.use('/fishbowl', express.static('client/fishbowl'));
 
-// replace the '/fishbowl/room' below with '/fishbowl/RMCODE', host many virt urls on same folder
-app.use('/fishbowl/room', express.static('client/fishbowl/room'));
-
 serv.listen(2000); // change this port whenever, currently we are hosting on localhost:2000
 console.log('server started');
 
 var SOCKET_LIST = {}; // player list
+var LOBBY_LIST = {};
 var NUM_SOCKETS = 0;
 var CODE_LEN = 4;
 
@@ -33,12 +31,26 @@ io.sockets.on('connection', function(socket) {
     });
     SOCKET_LIST[socket.id] = socket; // push into list
 
-    // LOBBY SET UP
-    // if(NUM_SOCKETS == 1) { 
-        
-    // }
-
     // Client to Server
+    socket.on('join req', function(data) {
+        var code = data.room_code;
+        var ack = data.fn;
+        if(LOBBY_LIST[code] == undefined) {
+            ack(false);
+        } else {
+            socket.join(code);
+            ack(true);
+        }
+    });
+    socket.on('host req', function(fn) {
+        var lobby = make_lobby_code(CODE_LEN);
+        console.log("creating lobby at code " + lobby);
+        // now create the virtual url and io room for that 
+        socket.join(lobby);
+        // host many virt urls on same folder
+        app.use('/fishbowl/' + lobby, express.static('client/fishbowl/room'));
+        fn(lobby); // respond to client with their code so they can update page
+    });
     socket.on('pname update', function(data) {
         console.log(socket.name + ' changed name to ' + data.player_name);
         socket.name = data.player_name;
@@ -55,7 +67,7 @@ io.sockets.on('connection', function(socket) {
         });
         delete SOCKET_LIST[socket.id];
         NUM_SOCKETS--;
-    });
+    }); // TODO add a new emit to client side when host leaves game destroy lobby (when last player leaves)
 });
 
 // makes random char strings for lobby codes

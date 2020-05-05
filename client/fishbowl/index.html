@@ -1,41 +1,63 @@
 <!DOCTYPE html>
 <html lang="en-US">
     <head> 
+        <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script> 
         <link rel="stylesheet" href="styles.css" type='text/css'>
-        <title>mikejec</title>
+        <title>fishbowl</title>
     </head>
     <body>
         <div class="header">
-            <b><large>mike jec</large></b>
-            <em><small>version a0.1</small></em>
+            <b><large>fishbowl</large></b>
+            <em><small>version a0.4</small></em><br>
+            <br>
         </div>
         <br>
-
         <div class="wrapper">
-            <div class="sidebar">
-                <div id="fish" onclick="javascript:fishbowl_redir()">
-                    <span>fishbowl</span>
-                </div>
-                <div id="p1">
-                    <span>placeholder</span>
-                </div>
-                <div id="p2">
-                    <span>placeholder</span>
-                </div>
+            <div class="container">
+                <img src="img/fish-tank-cartoon.png">
             </div>
-
-            <div class="main">
-                this page is a placeholder for a homepage until i have stuff to put here. until then
-                it will simply serve as a way route people to fishbowl and for me to play around with
-                different css properties
-                <br><br><br>
-                <em>- michael</em>
+            <div class="btn" onclick="javascript:host_game()">
+                host game
+            </div>
+            <div class="btn" onclick="javascript:join_game()">
+                <span id="join_game">join game</span>
+                <form id="join_form" style="display: none;" onclick="javascript:code_submit(codebox.value)">
+                    <label for="join" id="join_label">code: </label>
+                    <input type="text" style="width: 60px;" id="codebox" name="codebox">
+                    <input type="submit" id="join_btn" value="join">
+                </form>
             </div>
         </div>
-
         <script>
-            function fishbowl_redir() {
-                window.location.replace('/fishbowl');
+            var socket = io();
+            var CLICKED = false;
+        
+            function host_game() {
+                socket.emit('host req', function(lobby) { // acknowledgement function
+                    console.log("hosting lobby at " + lobby); // data will be server's response to our host req
+                    window.location.href = "http://localhost:2000/fishbowl/" + lobby;
+                });
+            }
+            function join_game() {
+                // basically only allow this once per page load to prevent accidental clicking
+                if(!CLICKED) {
+                    CLICKED = true;
+                    document.getElementById('join_game').innerHTML = "";
+                    document.getElementById('join_form').style.display = "inline";
+                }
+            }
+            function code_submit(code) {
+                socket.emit('join req', { 
+                    room_code: code, 
+                    fn: function(access_granted) {
+                        if(access_granted) {
+                         window.location.href = "http://localhost:2000/fishbowl/" + code;
+                        } else {
+                            document.getElementById('join_label').value = "invalid, try again:";
+                            document.getElementById('codebox').value = "";
+                        }
+                    }
+                });
             }
         </script>
     </body>

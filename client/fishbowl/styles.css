@@ -1,0 +1,31 @@
+.header {
+    background-color: #fff666;
+    padding:1em;
+    text-align: center;
+    font-size: 14px;
+}
+.wrapper {
+    display: grid;
+    grid-template-columns: 1;
+    background-color: gainsboro;
+    grid-auto-columns: minmax(300px, auto);
+    justify-content: center;
+    grid-gap: 1em;
+    padding: 1em;
+    padding-bottom: 25em;
+}
+.btn {
+    height: 50px;
+    line-height: 50px;
+    text-align: center;
+    border: black 2px solid;
+    background-color: #fff666;
+}
+.container {
+    width: 300px;
+    height: 300px;
+}
+img {
+    width: 100%;
+    height: auto;
+}
