@@ -10,7 +10,7 @@
     <body>
         <div class="header">
             <b><large>fishbowl</large></b>
-            <em><small>version a0.6</small></em><br>
+            <em><small>version a0.7</small></em><br>
             <small>game status: </small>
             <b><small id="game_status">prep</small></b>
         </div>
@@ -76,10 +76,9 @@
                 update_name_silent(data.name);
             });
             socket.on('players in lobby', function(ids_to_names) {
-                console.log(socket.id + ' got new players in lobby, adding them now');
                 for(var id in ids_to_names) {
                     if(ids_to_names.hasOwnProperty(id)) {
-                        add_player_to_lobby(id, ids_to_names[id]);
+                        add_player_to_lobby(ids_to_names[id], id);
                     }
                 }
             });
@@ -90,6 +89,7 @@
                 // get item in container and change it?
                 var id = "pid_" + data.id;
                 var item = document.getElementById(id);
+                console.log(item.innerHTML + ' changed name to ' + data.name);
                 item.innerHTML = data.name;
             });
             socket.on('lobby player removed', function(data) {

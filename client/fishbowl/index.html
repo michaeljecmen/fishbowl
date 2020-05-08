@@ -8,7 +8,7 @@
     <body>
         <div class="header">
             <b><large>fishbowl</large></b>
-            <em><small>version a0.6</small></em><br>
+            <em><small>version a0.7</small></em><br>
             <br>
         </div>
         <br>
@@ -21,11 +21,11 @@
             </div>
             <div class="btn" onclick="javascript:join_game_btn()">
                 <span id="join_game">join game</span>
-                <span id="join_form" style="display: none;">
+                <form id="join_form" style="display: none;" action="javascript:code_submit()">
                     <label id="join_label">code: </label>
                     <input type="text" style="width: 60px;" id="rmcode" name="rmcode">
-                    <input type="submit" value="join" onclick="javascript:code_submit()">
-                </span>
+                    <input type="submit" value="join">
+                </form>
             </div>
         </div>
         <script>
@@ -34,7 +34,6 @@
         
             function host_game() {
                 socket.emit('host req', function(lobby) { // acknowledgement function
-                    console.log("hosting lobby at " + lobby); // data will be server's response to our host req
                     window.location.href = lobby;
                 });
             }

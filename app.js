@@ -12,6 +12,7 @@ serv.listen(2000); // change this port whenever, currently we are hosting on loc
 console.log('server started');
 
 // globals for this module
+var IDS_TO_NAMES = {};
 var CODE_LEN = 4;
 
 var io = require('socket.io')(serv,{});
@@ -19,18 +20,16 @@ io.sockets.on('connection', function(socket) {
     var tmp = Math.floor(Math.random() * 100000); // 6 digit player id
     socket.name = 'player_' + tmp; // temp name
     console.log('socket connection, ' + socket.name);
+    IDS_TO_NAMES[socket.id] = socket.name;
     socket.emit('your name', {
         name: socket.name
     }); // send player their name for display purposes (to everyone in lobby too)
 
     // Client to Server
     socket.on('join req', function(code, ack) {
-        console.log('player requesting to join lobby ' + code);
         if(typeof io.sockets.adapter.rooms[code] == 'undefined' || io.sockets.adapter.rooms[code].length <= 0) {
-            console.log('lobby ' + code + ' does not exist'); // second condition is only in place for if
             ack(false);
         } else {
-            console.log('lobby ' + code + ' exists, acknowledging');
             ack(true);
         }
     });
@@ -48,14 +47,15 @@ io.sockets.on('connection', function(socket) {
         });
         // and get notified of all the players in the room
         var players_in_room = io.sockets.adapter.rooms[code].sockets;
-        var ids_to_names = {};
+        var lobby_info = {};
         for(var s in players_in_room) {
             if(players_in_room.hasOwnProperty(s)) {
-                ids_to_names[s.id] = s.name;
+                lobby_info[s] = IDS_TO_NAMES[s];
             }
         }
         // send this data only to the new player
-        io.to(socket.id).emit('players in lobby', ids_to_names);
+        console.log(socket.id + ' is being sent list of players in lobby');
+        io.to(socket.id).emit('players in lobby', lobby_info);
     });
     socket.on('host req', function(ack) {
         var lobby = make_lobby_code(CODE_LEN);
@@ -68,8 +68,8 @@ io.sockets.on('connection', function(socket) {
         // this not sure what it is. probably with cookies
     });
     socket.on('pname update', function(data) {
-        console.log(socket.name + ' changed name to ' + data.player_name);
         socket.name = data.player_name;
+        IDS_TO_NAMES[socket.id] = socket.name;
         // update those names in peoples lobbies
         io.to(data.lobby).emit('lobby name update', {
             id: socket.id,
@@ -77,9 +77,9 @@ io.sockets.on('connection', function(socket) {
         });
     });
     socket.on('disconnect', function() {
-        console.log(socket.name + ' disconnected');
         // broadcast to all players, unfortunate performance hit
         // but can't figure out how to just broadccast to that player's lobby
+        delete IDS_TO_NAMES[socket.id];
         socket.broadcast.emit('lobby player removed', {
             id: socket.id
         });
