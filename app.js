@@ -11,63 +11,81 @@ app.use('/fishbowl', express.static('client/fishbowl'));
 serv.listen(2000); // change this port whenever, currently we are hosting on localhost:2000
 console.log('server started');
 
-var SOCKET_LIST = {}; // player list
-var LOBBY_LIST = {};
-var NUM_SOCKETS = 0;
+// globals for this module
 var CODE_LEN = 4;
 
 var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket) {
-    NUM_SOCKETS++;
-    socket.id = Math.floor(Math.random() * 100000); // 6 digit player id
-    socket.name = 'player_' + socket.id; // temp name
+    var tmp = Math.floor(Math.random() * 100000); // 6 digit player id
+    socket.name = 'player_' + tmp; // temp name
     console.log('socket connection, ' + socket.name);
     socket.emit('your name', {
         name: socket.name
     }); // send player their name for display purposes (to everyone in lobby too)
-    socket.broadcast.emit('lobby player added', {
-        name: socket.name,
-        id: socket.id
-    });
-    SOCKET_LIST[socket.id] = socket; // push into list
 
     // Client to Server
-    socket.on('join req', function(data) {
-        var code = data.room_code;
-        var ack = data.fn;
-        if(LOBBY_LIST[code] == undefined) {
+    socket.on('join req', function(code, ack) {
+        console.log('player requesting to join lobby ' + code);
+        if(typeof io.sockets.adapter.rooms[code] == 'undefined' || io.sockets.adapter.rooms[code].length <= 0) {
+            console.log('lobby ' + code + ' does not exist'); // second condition is only in place for if
             ack(false);
         } else {
-            socket.join(code);
+            console.log('lobby ' + code + ' exists, acknowledging');
             ack(true);
         }
     });
-    socket.on('host req', function(fn) {
+
+    // ALL ROOM JOINS GO THROUGH THIS FUNCTION
+    socket.on('hard join', function(code) {
+        // join the room, no questions asked
+        console.log(socket.id + ' hard join ' + code);
+        socket.join(code);
+        
+        // also notify others in the room of your presence
+        socket.to(code).emit('lobby player added', {
+            name: socket.name,
+            id: socket.id
+        });
+        // and get notified of all the players in the room
+        var players_in_room = io.sockets.adapter.rooms[code].sockets;
+        var ids_to_names = {};
+        for(var s in players_in_room) {
+            if(players_in_room.hasOwnProperty(s)) {
+                ids_to_names[s.id] = s.name;
+            }
+        }
+        // send this data only to the new player
+        io.to(socket.id).emit('players in lobby', ids_to_names);
+    });
+    socket.on('host req', function(ack) {
         var lobby = make_lobby_code(CODE_LEN);
         console.log("creating lobby at code " + lobby);
-        // now create the virtual url and io room for that 
-        socket.join(lobby);
-        // host many virt urls on same folder
+        // now create the virtual url and io room for that
         app.use('/fishbowl/' + lobby, express.static('client/fishbowl/room'));
-        fn(lobby); // respond to client with their code so they can update page
+        ack(lobby);
+        // only once page has reloaded and client has reconnected do we 
+        // add their socket to the room. if there's a better solution to 
+        // this not sure what it is. probably with cookies
     });
     socket.on('pname update', function(data) {
         console.log(socket.name + ' changed name to ' + data.player_name);
         socket.name = data.player_name;
         // update those names in peoples lobbies
-        socket.broadcast.emit('lobby name update', {
+        io.to(data.lobby).emit('lobby name update', {
             id: socket.id,
             name: socket.name
         });
     });
     socket.on('disconnect', function() {
         console.log(socket.name + ' disconnected');
+        // broadcast to all players, unfortunate performance hit
+        // but can't figure out how to just broadccast to that player's lobby
         socket.broadcast.emit('lobby player removed', {
             id: socket.id
         });
-        delete SOCKET_LIST[socket.id];
-        NUM_SOCKETS--;
-    }); // TODO add a new emit to client side when host leaves game destroy lobby (when last player leaves)
+        // TODO find a way to unhost the url for that game when
+        // last player DCs
+    }); 
 });
 
 // makes random char strings for lobby codes
@@ -75,7 +93,7 @@ function make_lobby_code(length) {
     var result           = '';
     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     var charactersLength = characters.length;
-    for ( var i = 0; i < length; i++ ) {
+    for(var i = 0; i < length; i++) {
        result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;

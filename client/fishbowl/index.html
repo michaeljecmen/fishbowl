@@ -8,7 +8,7 @@
     <body>
         <div class="header">
             <b><large>fishbowl</large></b>
-            <em><small>version a0.4</small></em><br>
+            <em><small>version a0.6</small></em><br>
             <br>
         </div>
         <br>
@@ -19,13 +19,13 @@
             <div class="btn" onclick="javascript:host_game()">
                 host game
             </div>
-            <div class="btn" onclick="javascript:join_game()">
+            <div class="btn" onclick="javascript:join_game_btn()">
                 <span id="join_game">join game</span>
-                <form id="join_form" style="display: none;" onclick="javascript:code_submit(codebox.value)">
-                    <label for="join" id="join_label">code: </label>
-                    <input type="text" style="width: 60px;" id="codebox" name="codebox">
-                    <input type="submit" id="join_btn" value="join">
-                </form>
+                <span id="join_form" style="display: none;">
+                    <label id="join_label">code: </label>
+                    <input type="text" style="width: 60px;" id="rmcode" name="rmcode">
+                    <input type="submit" value="join" onclick="javascript:code_submit()">
+                </span>
             </div>
         </div>
         <script>
@@ -35,10 +35,10 @@
             function host_game() {
                 socket.emit('host req', function(lobby) { // acknowledgement function
                     console.log("hosting lobby at " + lobby); // data will be server's response to our host req
-                    window.location.href = "http://localhost:2000/fishbowl/" + lobby;
+                    window.location.href = lobby;
                 });
             }
-            function join_game() {
+            function join_game_btn() {
                 // basically only allow this once per page load to prevent accidental clicking
                 if(!CLICKED) {
                     CLICKED = true;
@@ -46,16 +46,15 @@
                     document.getElementById('join_form').style.display = "inline";
                 }
             }
-            function code_submit(code) {
-                socket.emit('join req', { 
-                    room_code: code, 
-                    fn: function(access_granted) {
-                        if(access_granted) {
-                         window.location.href = "http://localhost:2000/fishbowl/" + code;
-                        } else {
-                            document.getElementById('join_label').value = "invalid, try again:";
-                            document.getElementById('codebox').value = "";
-                        }
+            function code_submit() {
+                var code = document.getElementById('rmcode').value;
+                socket.emit('join req', code, function(access_granted) {
+                    if(access_granted) {
+                        window.location.href = "http://localhost:2000/fishbowl/" + code;
+                    } else {
+                        console.log('bad lobby');
+                        document.getElementById('join_label').innerHTML = "invalid room:";
+                        document.getElementById('rmcode').value = "";
                     }
                 });
             }

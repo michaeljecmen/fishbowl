@@ -10,7 +10,7 @@
     <body>
         <div class="header">
             <b><large>fishbowl</large></b>
-            <em><small>version a0.4</small></em><br>
+            <em><small>version a0.6</small></em><br>
             <small>game status: </small>
             <b><small id="game_status">prep</small></b>
         </div>
@@ -46,6 +46,9 @@
 
         <script>
             var socket = io();
+            var sp = window.location.href.toString().split('/');
+            var room = sp[sp.length-2];
+            socket.emit('hard join', room);
         
             function update_name_silent(pname) {
                 var pform = document.getElementById('pname_form');
@@ -56,7 +59,8 @@
             function update_name(pname) {
                 update_name_silent(pname);
                 socket.emit('pname update', {
-                    player_name: pname
+                    player_name: pname,
+                    lobby: room
                 }); // need to parametrize input still, vulnerable to XSS
             }
             function add_player_to_lobby(name, id) {
@@ -71,6 +75,14 @@
             socket.on('your name', function(data) {
                 update_name_silent(data.name);
             });
+            socket.on('players in lobby', function(ids_to_names) {
+                console.log(socket.id + ' got new players in lobby, adding them now');
+                for(var id in ids_to_names) {
+                    if(ids_to_names.hasOwnProperty(id)) {
+                        add_player_to_lobby(id, ids_to_names[id]);
+                    }
+                }
+            });
             socket.on('lobby player added', function(data) {
                 add_player_to_lobby(data.name, data.id);
             });
@@ -82,7 +94,13 @@
             });
             socket.on('lobby player removed', function(data) {
                 var jqid = "#did_" + data.id;
-                $(jqid).remove();
+                var player = document.getElementById(jqid);
+                if(typeof player != 'undefined') {
+                    // not sure how to remove players other than sending dc codes to
+                    // all lobbies, therefore we have the issue of detecting which
+                    // dcs are relevant to this lobby
+                    $(jqid).remove();
+                }
             });
         </script>
     </body>
