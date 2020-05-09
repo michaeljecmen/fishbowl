@@ -49,7 +49,8 @@ io.sockets.on('connection', function(socket) {
             set_player_as_host(socket.id, code);
         } else {
             // if lobby exists, get notified of all the players in the room
-            var players_in_room = io.sockets.adapter.rooms[code].sockets;
+            var room = io.sockets.adapter.rooms[code];
+            var players_in_room =  room.sockets;
             var player_data = {};
             for(var s in players_in_room) {
                 if(players_in_room.hasOwnProperty(s)) {
@@ -109,17 +110,23 @@ io.sockets.on('connection', function(socket) {
                     var other_players = io.sockets.adapter.rooms[room].sockets;
                     // loop over these homies and pick the first one, tell them
                     // that they're the host
+                    var new_host_found = false;
                     for(var sock in other_players) {
-                        if(other_players.hasOwnProperty(sock)) {
+                        if(other_players.hasOwnProperty(sock) && sock != socket.id) {
                             set_player_as_host(sock, room);
+                            new_host_found = true;
                             break;
                         }
+                    }
+                    if(!new_host_found) {
+                        // if nobody else in lobby then delete the room
+                        delete ROOMS[room];
+                        // TODO find a way to unhost the url for that game when
+                        // last player DCs
                     }
                 }
             }
         }
-        // TODO find a way to unhost the url for that game when
-        // last player DCs
     });
 });
 
@@ -127,8 +134,7 @@ io.sockets.on('connection', function(socket) {
 // and inform the other players in the room as well
 function set_player_as_host(host, room) {
     ROOMS[room]['host'] = host;
-    io.to(host).emit('you are host');
-    io.to(room).emit('other player is host', host);
+    io.to(room).emit('this person is host', host);
 }
 
 // join a room and notify those in the room of your presence (yourself included)

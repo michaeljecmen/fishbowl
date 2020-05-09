@@ -26,7 +26,7 @@
             </div>
 
             <div class="box lobby">
-                <p id="lobby_name">lobby:</p>
+                <p id="lobby_name">lobby: </p>
                 <div id="lobby" class="container"></div>
                 <template id="item_template">
                     <div id="did_{{ id }}" class="item">
@@ -40,7 +40,24 @@
             </div>
 
             <div class="box game">
-                the actual game goes here. random text blah blah blah
+                <div class='wfp'>
+                    waiting for players to join
+                </div>
+                <div class="btn">
+                    all players are in
+                </div>
+            </div>
+
+            <div class="box consolebox">
+                console
+                <br>
+                <div id="console" class="console">
+                    <template id="cons_item_template">
+                        <div class="item">
+                          {{ log }}
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
 
@@ -50,6 +67,8 @@
             var sp = window.location.href.toString().split('/');
             var room = sp[sp.length-2];
             socket.emit('hard join', room);
+            write_to_console('start');
+            document.getElementById('lobby_name').innerHTML += room;
         
             function update_name_silent(pname) {
                 var pform = document.getElementById('pname_form');
@@ -67,9 +86,15 @@
             function add_player_to_lobby(name, id) {
                 // does not do any duplicate or error checking,
                 // that is the server's job
+                write_to_console(name + ' joined the lobby');
                 const template = $('#item_template').html()
                 const container = $('#lobby');
                 container.append(Mustache.render(template, { name, id }));
+            }
+            function write_to_console(log) {
+                const template = $('#cons_item_template').html()
+                const container = $('#console');
+                container.prepend(Mustache.render(template, { log }));
             }
         
             // Server to Client
@@ -91,24 +116,25 @@
                 // get item in container and change it?
                 var id = "pid_" + data.id;
                 var item = document.getElementById(id);
-                console.log(item.innerHTML + ' changed name to ' + data.name);
+                write_to_console(item.innerHTML + ' changed name to ' + data.name);
                 item.innerHTML = data.name;
             });
             socket.on('lobby player removed', function(removed_id) {
                 var el_id = "did_" + removed_id;
                 var player = document.getElementById(el_id);
                 if(typeof player != 'null') {
+                    var name = document.getElementById('pid_' + removed_id);
+                    write_to_console(name.innerHTML + ' left the room');
                     // not sure how to remove players other than sending dc codes to
                     // all lobbies, therefore we have the issue of detecting which
                     // dcs are relevant to this lobby
                     player.remove(); // host changing happens in server
                 }
             });
-            socket.on('you are host', function() {
-                document.getElementById('did_' + socket.id).classList.add("host");
-            });
-            socket.on('other player is host', function(host_id) {
+            socket.on('this person is host', function(host_id) {
                 document.getElementById('did_' + host_id).classList.add("host");
+                var host_name = document.getElementById('pid_' + host_id).innerHTML;
+                write_to_console(host_name + ' is now hosting');
             });
 
             socket.on('DEBUG', function(data) {
