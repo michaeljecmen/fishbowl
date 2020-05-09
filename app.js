@@ -45,20 +45,23 @@ io.sockets.on('connection', function(socket) {
             // make this player host if first in
             console.log('first in, making host');
             ROOMS[code] = {}; // create obj
-            ROOMS[code]['host'] = socket.id;
             join_then_notify_roommates(socket, code);
-            io.to(socket.id).emit('you are host');
+            set_player_as_host(socket.id, code);
         } else {
             // if lobby exists, get notified of all the players in the room
             var players_in_room = io.sockets.adapter.rooms[code].sockets;
-            var lobby_info = {};
+            var player_data = {};
             for(var s in players_in_room) {
                 if(players_in_room.hasOwnProperty(s)) {
-                    lobby_info[s] = IDS_TO_NAMES[s];
+                    player_data[s] = IDS_TO_NAMES[s];
                 }
             }
             // send this data only to the new player
             console.log(socket.id + ' is being sent list of players in lobby');
+            lobby_info = {
+                host: ROOMS[code].host,
+                players: player_data
+            };
             io.to(socket.id).emit('players in lobby', lobby_info);
 
             // then alert others of your presence
@@ -89,23 +92,44 @@ io.sockets.on('connection', function(socket) {
         });
     });
     socket.on('disconnect', function() {
-        // broadcast to all players, unfortunate performance hit
-        // but can't figure out how to just broadcast to that player's lobby
-        console.log('player dcd, here are their rooms: ' + socket.rooms);
-        socket.broadcast.emit('DEBUG', socket.rooms);
-        for(var r in socket.rooms) {
-            if(socket.rooms.hasOwnProperty(r)) {
-                // find the lobby room (fmt 'XXXX') and notify the 
+        // socket has left all rooms
+        console.log('socket ' + socket.id + ' disconnected');
+        delete IDS_TO_NAMES[socket.id];
+    }); 
+    socket.on('disconnecting', function(){
+        // socket has not yet left all rooms
+        for(var room in socket.rooms) {
+            // find room code and emit to group
+            // also if host, find a new one
+            if(room.length == CODE_LEN) {
+                // if its a room
+                io.to(room).emit('lobby player removed', socket.id);
+                if(ROOMS[room].host == socket.id) {
+                    // if we are the host of this room
+                    var other_players = io.sockets.adapter.rooms[room].sockets;
+                    // loop over these homies and pick the first one, tell them
+                    // that they're the host
+                    for(var sock in other_players) {
+                        if(other_players.hasOwnProperty(sock)) {
+                            set_player_as_host(sock, room);
+                            break;
+                        }
+                    }
+                }
             }
         }
-        delete IDS_TO_NAMES[socket.id];
-        socket.broadcast.emit('lobby player removed', {
-            id: socket.id
-        });
         // TODO find a way to unhost the url for that game when
         // last player DCs
-    }); 
+    });
 });
+
+// set this player as the host of this room, inform them,
+// and inform the other players in the room as well
+function set_player_as_host(host, room) {
+    ROOMS[room]['host'] = host;
+    io.to(host).emit('you are host');
+    io.to(room).emit('other player is host', host);
+}
 
 // join a room and notify those in the room of your presence (yourself included)
 function join_then_notify_roommates(socket, code) {

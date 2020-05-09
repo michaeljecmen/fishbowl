@@ -76,12 +76,13 @@
             socket.on('your name', function(data) {
                 update_name_silent(data.name);
             });
-            socket.on('players in lobby', function(ids_to_names) {
-                for(var id in ids_to_names) {
-                    if(ids_to_names.hasOwnProperty(id)) {
-                        add_player_to_lobby(ids_to_names[id], id);
+            socket.on('players in lobby', function(lobby_info) {
+                for(var id in lobby_info.players) {
+                    if(lobby_info.players.hasOwnProperty(id)) {
+                        add_player_to_lobby(lobby_info.players[id], id);
                     }
                 }
+                document.getElementById('did_' + lobby_info.host).classList.add("host");
             });
             socket.on('lobby player added', function(data) {
                 add_player_to_lobby(data.name, data.id);
@@ -93,8 +94,8 @@
                 console.log(item.innerHTML + ' changed name to ' + data.name);
                 item.innerHTML = data.name;
             });
-            socket.on('lobby player removed', function(data) {
-                var el_id = "did_" + data.id;
+            socket.on('lobby player removed', function(removed_id) {
+                var el_id = "did_" + removed_id;
                 var player = document.getElementById(el_id);
                 if(typeof player != 'null') {
                     // not sure how to remove players other than sending dc codes to
@@ -105,6 +106,9 @@
             });
             socket.on('you are host', function() {
                 document.getElementById('did_' + socket.id).classList.add("host");
+            });
+            socket.on('other player is host', function(host_id) {
+                document.getElementById('did_' + host_id).classList.add("host");
             });
 
             socket.on('DEBUG', function(data) {
