@@ -45,6 +45,7 @@
         </div>
 
         <script>
+            // TODO webpack this guy so its not a big one
             var socket = io();
             var sp = window.location.href.toString().split('/');
             var room = sp[sp.length-2];
@@ -93,14 +94,23 @@
                 item.innerHTML = data.name;
             });
             socket.on('lobby player removed', function(data) {
-                var jqid = "#did_" + data.id;
-                var player = document.getElementById(jqid);
-                if(typeof player != 'undefined') {
+                var el_id = "did_" + data.id;
+                var player = document.getElementById(el_id);
+                if(typeof player != 'null') {
                     // not sure how to remove players other than sending dc codes to
                     // all lobbies, therefore we have the issue of detecting which
                     // dcs are relevant to this lobby
-                    $(jqid).remove();
+                    player.remove(); // host changing happens in server
                 }
+            });
+            socket.on('you are host', function() {
+                document.getElementById('did_' + socket.id).classList.add("host");
+            });
+
+            socket.on('DEBUG', function(data) {
+                console.log('DEBUG BEGIN');
+                console.log(data);
+                console.log('DEBUG END');
             });
         </script>
     </body>

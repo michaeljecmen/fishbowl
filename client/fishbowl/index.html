@@ -7,7 +7,7 @@
     </head>
     <body>
         <div class="header">
-            <b><large>fishbowl</large></b>
+            <b><large>fishbowl home</large></b>
             <em><small>version a0.7</small></em><br>
             <br>
         </div>
@@ -29,6 +29,7 @@
             </div>
         </div>
         <script>
+            // TODO make the buttons react w glow on hover
             var socket = io();
             var CLICKED = false;
         
@@ -49,6 +50,7 @@
                 var code = document.getElementById('rmcode').value;
                 socket.emit('join req', code, function(access_granted) {
                     if(access_granted) {
+                        document.getElementById('rmcode').value = "";
                         window.location.href = "http://localhost:2000/fishbowl/" + code;
                     } else {
                         console.log('bad lobby');
