@@ -10,7 +10,7 @@
     <body>
         <div class="header">
             <b><large>fishbowl</large></b>
-            <em><small>version a0.7</small></em><br>
+            <em><small>version a0.8</small></em><br>
             <small>game status: </small>
             <b><small id="game_status">prep</small></b>
         </div>
@@ -40,11 +40,30 @@
             </div>
 
             <div class="box game">
-                <div class='wfp'>
+                <div id="wfp" class='wfp'>
                     waiting for players to join
                 </div>
-                <div class="btn">
-                    all players are in
+                <div id="nonhost_msg">
+                    only host can start the game
+                </div>
+                <div id="all_players_btn" class="btn hide" onclick="javascript:prompt_for_num_cards()">
+                    <p id="api">all players are in</p>
+                    <form id="num_cards_form" class="hide" action="javascript:begin_card_phase(num_cards.value)">
+                        <label id="cards_label">cards per player:</label> <br>
+                        <label id="recommended"></label><br><br>
+                        <input type="text" style="width: 40px;" id="num_cards" name="num_cards"> <br>
+                        <input type="submit" value="submit">
+                    </form>
+                </div>
+                <div id="card_header" class="hide">
+                    <label>enter a card: (</label><label id="cards_allowed"></label><label> cards per person)</label>
+                </div>
+                <div id="card_div" class="card hide">
+                    <form id="card_form" action="javascript:submit_card(cardbox.value)">
+                        <label>card number: </label><label id="card_count">1</label> <br>
+                        <input type="text" style="width: 200px;" id="cardbox" name="cardbox"> <br>
+                        <input type="submit" value="submit">
+                    </form>
                 </div>
             </div>
 
@@ -66,6 +85,10 @@
             var socket = io();
             var sp = window.location.href.toString().split('/');
             var room = sp[sp.length-2];
+            var is_host = false;
+            var CLICKED = false;
+            var MAX_NUM_CARDS = 1;
+            var card_number = 1;
             socket.emit('hard join', room);
             write_to_console('start');
             document.getElementById('lobby_name').innerHTML += room;
@@ -96,8 +119,73 @@
                 const container = $('#console');
                 container.prepend(Mustache.render(template, { log }));
             }
+            function set_me_as_host() {
+                is_host = true;
+                $('#all_players_btn').removeClass('hide');
+                $('#nonhost_msg').addClass('hide');
+            }
+            function prompt_for_num_cards() {
+                if(CLICKED == false) {
+                    CLICKED = true; // only allow one click
+                    document.getElementById('all_players_btn').style.height = "125px";
+                    document.getElementById('all_players_btn').style.width = "200px";
+                    $('#api').addClass('hide');
+                    document.getElementById('cards_label').innerHTML = "cards per player:";
+                    $('#num_cards_form').removeClass('hide');
+                    var num_players = document.getElementById('lobby').childElementCount;
+                    var rec = Math.ceil(40/num_players);
+                    document.getElementById('recommended').innerHTML = "(" + rec + " recommended)";
+                }
+            }
+            function begin_card_phase(num_cards) {
+                MAX_NUM_CARDS = num_cards;
+                document.getElementById('cards_allowed').innerHTML = num_cards;
+                socket.emit('writing phase req', {
+                    cards: num_cards,
+                    room: room
+                });
+            }
+            function submit_card(title) {
+                var name = document.getElementById('disp_name').innerHTML;
+                push_to_group_console(name + " wrote card #" + card_number);
+                document.getElementById('cardbox').value = "";
+
+                // submit the card to the server
+                socket.emit('card submit', {
+                    card: title,
+                    room: room
+                });
+
+                card_number++;
+                document.getElementById('card_count').innerHTML = card_number;
+                if(card_number > MAX_NUM_CARDS) {
+                    push_to_group_console(name + " is done writing cards");
+                    $('#card_header').addClass('hide');
+                    $('#card_div').addClass('hide');
+                    // make a waiting screen TODODODODOODOD
+                }
+            }
+            function push_to_group_console(s) {
+                socket.emit('group console write', {
+                    msg: s,
+                    room: room
+                });
+            }
         
             // Server to Client
+            socket.on('console write', function(msg) {
+                write_to_console(msg);
+            });
+            socket.on('begin writing phase', function(num_cards) {
+                // starts the card writing phase
+                write_to_console("starting game with " + num_cards + " cards per player");
+                document.getElementById('game_status').innerHTML = "writing";
+                $('#wfp').addClass('hide');
+                $('#nonhost_msg').addClass('hide');
+                $('#all_players_btn').addClass('hide');
+                $('#card_header').removeClass('hide');
+                $('#card_div').removeClass('hide');
+            });
             socket.on('your name', function(data) {
                 update_name_silent(data.name);
             });
@@ -132,6 +220,9 @@
                 }
             });
             socket.on('this person is host', function(host_id) {
+                if(host_id == socket.id) {
+                    set_me_as_host();
+                }
                 document.getElementById('did_' + host_id).classList.add("host");
                 var host_name = document.getElementById('pid_' + host_id).innerHTML;
                 write_to_console(host_name + ' is now hosting');

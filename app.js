@@ -34,6 +34,12 @@ io.sockets.on('connection', function(socket) {
             ack(true);
         }
     });
+    socket.on('group console write', function(data) {
+        io.to(data.room).emit('console write', data.msg);
+    });
+    socket.on('card submit', function(data) {
+        ROOMS[data.room].cards.push(data.card);
+    });
 
     // ALL ROOM JOINS GO THROUGH THIS FUNCTION
     socket.on('hard join', function(code) {
@@ -45,6 +51,7 @@ io.sockets.on('connection', function(socket) {
             // make this player host if first in
             console.log('first in, making host');
             ROOMS[code] = {}; // create obj
+            ROOMS[code]['cards'] = [];
             join_then_notify_roommates(socket, code);
             set_player_as_host(socket.id, code);
         } else {
@@ -91,6 +98,10 @@ io.sockets.on('connection', function(socket) {
             id: socket.id,
             name: socket.name
         });
+    });
+    socket.on('writing phase req', function(data) {
+        console.log(data.room + ' starting writing phase with ' + data.cards + ' cards');
+        io.to(data.room).emit('begin writing phase', data.cards);
     });
     socket.on('disconnect', function() {
         // socket has left all rooms

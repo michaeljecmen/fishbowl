@@ -101,13 +101,23 @@
     grid-row: 2;
     width: 150px;
     height: 40px;
-    line-height: 40px;
     background-color: #fff666;
     padding: 5px;
     border: black 2px solid;
     border-radius: 7px;
 }
-
+.card {
+    grid-row: 2;
+    width: 250px;
+    height: 80px;
+    background-color: #fff666;
+    padding: 5px;
+    border: black 2px solid;
+    border-radius: 7px;
+}
+.hide {
+    display: none;
+}
 #game_status {
     padding: 3px; 
     color: blue;
