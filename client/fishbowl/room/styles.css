@@ -118,6 +118,16 @@
 .hide {
     display: none;
 }
+.make_teams_btn {
+    width: 200px;
+    height: 40px;
+    line-height: 40px;
+    justify-content: center;
+    background-color: #fff666;
+    padding: 5px;
+    border: black 2px solid;
+    border-radius: 7px;
+}
 #game_status {
     padding: 3px; 
     color: blue;

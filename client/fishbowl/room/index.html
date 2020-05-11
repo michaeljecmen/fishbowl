@@ -56,7 +56,7 @@
                     </form>
                 </div>
                 <div id="card_header" class="hide">
-                    <label>enter a card: (</label><label id="cards_allowed"></label><label> cards per person)</label>
+                    <label>enter a card: (</label><label id="cards_allowed"></label><label> cards per player)</label>
                 </div>
                 <div id="card_div" class="card hide">
                     <form id="card_form" action="javascript:submit_card(cardbox.value)">
@@ -64,6 +64,9 @@
                         <input type="text" style="width: 200px;" id="cardbox" name="cardbox"> <br>
                         <input type="submit" value="submit">
                     </form>
+                </div>
+                <div id="make_teams_btn" class="make_teams_btn hide" onclick="javascript:make_teams()">
+                    end writing phase
                 </div>
             </div>
 
@@ -160,9 +163,14 @@
                 document.getElementById('card_count').innerHTML = card_number;
                 if(card_number > MAX_NUM_CARDS) {
                     push_to_group_console(name + " is done writing cards");
-                    $('#card_header').addClass('hide');
                     $('#card_div').addClass('hide');
-                    // make a waiting screen TODODODODOODOD
+                    // now a waiting screen
+                    if(is_host) {
+                        document.getElementById('card_header').innerHTML = "you can start the game at any time (but should wait for all players to finish)";
+                        $('#make_teams_btn').removeClass('hide');
+                    } else {
+                        document.getElementById('card_header').innerHTML = "wait for other players to finish writing";
+                    }
                 }
             }
             function push_to_group_console(s) {
@@ -170,6 +178,11 @@
                     msg: s,
                     room: room
                 });
+            }
+            function make_teams() {
+                push_to_group_console('writing phase is over, deck finalized');
+                push_to_group_console('making teams');
+                document.getElementById('game_status').innerHTML = "teams";
             }
         
             // Server to Client
