@@ -28,11 +28,7 @@ io.sockets.on('connection', function(socket) {
 
     // Client to Server
     socket.on('join req', function(code, ack) {
-        if(typeof io.sockets.adapter.rooms[code] == 'undefined' || io.sockets.adapter.rooms[code].length <= 0) {
-            ack(false);
-        } else {
-            ack(true);
-        }
+        ack(typeof io.sockets.adapter.rooms[code] != 'undefined' && io.sockets.adapter.rooms[code].length > 0);
     });
     socket.on('group console write', function(data) {
         io.to(data.room).emit('console write', data.msg);
